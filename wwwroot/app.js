@@ -10,6 +10,8 @@ let video_sessionId;
 let video_token;
 let deepAR_license_key;
 
+let deepAR;
+
 // create canvas on which DeepAR will render
 var deepARCanvas = document.createElement('canvas');
 var mediaStream = deepARCanvas.captureStream(25);
@@ -64,7 +66,7 @@ function initializeSession() {
 function initDeepAR() {
 
   // Initialize the DeepAR object
-  var deepAR = DeepAR({
+  deepAR = DeepAR({
     licenseKey: deepAR_license_key,
     canvasWidth: 640,
     canvasHeight: 480,
@@ -73,13 +75,49 @@ function initDeepAR() {
     onInitialize: function () {
       // start video immediately after the initalization, mirror = true
       deepAR.startVideo(true);
-      // load the aviators effect on the first face into slot 'slot'
-      deepAR.switchEffect(0, 'slot', './effects/aviators', function () {
-        // effect loaded
-      });
     }
   });
 
   // download the face tracking model
   deepAR.downloadFaceTrackingModel('models/models-68-extreme.bin');
+}
+
+function switchARFilter(effect) {
+  deepAR.switchEffect(0, `slot${slots}`, `./effects/${effect}`, function () {
+    // effect loaded
+  });
+}
+
+const effectSelect = document.getElementById('effects');
+const pills = document.getElementsByClassName('pills')[0];
+let slots = 0;
+
+effectSelect.addEventListener('change', addFilter);
+
+function addPill(name, value) {
+  let pill = document.createElement('div');
+  pill.classList.add('pill');
+  pill.innerText = name;
+  pill.id = `slot${slots}`;
+  pill.addEventListener('click', removeFilter);
+  pills.appendChild(pill);
+}
+
+function addFilter() {
+  const name = effectSelect.selectedOptions[0].innerHTML;
+  const value = effectSelect.value;
+
+  if (value !== 0) {
+    switchARFilter(value);
+    addPill(name, value);
+    slots++;
+    effectSelect.value = '';
+  }
+}
+function removeFilter(ev) {
+  const pill = ev.target;
+  const slot = ev.target.id;
+
+  deepAR.clearEffect(slot);
+  pills.removeChild(pill);
 }
